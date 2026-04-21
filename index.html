@@ -91,19 +91,36 @@
             } catch(e) { console.error("Error cargando mercado:", e); }
         }
 
-        function cargarGraficaTradingView(symbol) {
-            let ticker = symbol === 'BINANCECOIN' ? 'BNB' : symbol;
-            new TradingView.widget({
-                "autosize": true,
-                "symbol": `BINANCE:${ticker}USDT`,
-                "interval": "D",
-                "timezone": "Etc/UTC",
-                "theme": "dark",
-                "style": "1",
-                "locale": "es",
-                "container_id": "tradingview_widget"
-            });
-        }
+function cargarGraficaTradingView(symbol) {
+    // Traductor de nombre completo a Ticker de Trading
+    const tickers = {
+        'BITCOIN': 'BTC',
+        'ETHEREUM': 'ETH',
+        'SOLANA': 'SOL',
+        'BINANCECOIN': 'BNB',
+        'CARDANO': 'ADA',
+        'RIPPLE': 'XRP'
+    };
+
+    // Obtenemos la abreviatura o usamos el símbolo original si no está en la lista
+    let ticker = tickers[symbol.toUpperCase()] || symbol.toUpperCase();
+
+    new TradingView.widget({
+        "autosize": true,
+        "symbol": `BINANCE:${ticker}USDT`, // Ahora enviará BINANCE:BTCUSDT
+        "interval": "D",
+        "timezone": "Etc/UTC",
+        "theme": "dark",
+        "style": "1",
+        "locale": "es",
+        "container_id": "tradingview_widget",
+        "hide_side_toolbar": false,
+        "allow_symbol_change": true,
+        "details": true,
+        "hotlist": true,
+        "calendar": true
+    });
+}
 
         cargarMercado();
         setInterval(cargarMercado, 30000);
