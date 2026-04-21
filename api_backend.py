@@ -19,6 +19,7 @@ app.add_middleware(
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 def motor_de_datos():
+    """Descarga precios de las monedas principales cada minuto"""
     monedas = "bitcoin,ethereum,solana,binancecoin,cardano,ripple"
     while True:
         try:
@@ -29,7 +30,8 @@ def motor_de_datos():
                     (id SERIAL PRIMARY KEY, coin VARCHAR(50), price_usd FLOAT, 
                     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
                 
-                res = requests.get(f"https://api.coingecko.com/api/v3/simple/price?ids={monedas}&vs_currencies=usd&include_24hr_change=true", timeout=10)
+                url = f"https://api.coingecko.com/api/v3/simple/price?ids={monedas}&vs_currencies=usd"
+                res = requests.get(url, timeout=10)
                 data = res.json()
                 
                 for coin, info in data.items():
@@ -38,8 +40,9 @@ def motor_de_datos():
                 conn.commit()
                 cur.close()
                 conn.close()
+                print(f"✔️ Sincronización exitosa: {list(data.keys())}")
         except Exception as e:
-            print(f"Error: {e}")
+            print(f"❌ Error en motor: {e}")
         time.sleep(60)
 
 @app.on_event("startup")
