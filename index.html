@@ -11,47 +11,61 @@
     <nav class="bg-[#0f172a] border-b border-slate-800 sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
             <div class="flex items-center gap-8">
-                <span class="text-blue-500 font-black text-xl tracking-tighter italic">WHALE<span class="text-white font-normal">PRO</span></span>
+                <span class="text-blue-500 font-black text-xl italic cursor-pointer" onclick="showTab('global')">
+                    WHALE<span class="text-white font-normal">PRO</span>
+                </span>
                 <div class="hidden md:flex gap-6 text-sm font-medium">
-                    <button onclick="showTab('global')" class="text-white border-b-2 border-blue-500 pb-5 pt-5 transition">Mercado Global</button>
-                    <button onclick="showTab('bitcoin')" class="hover:text-blue-400 pb-5 pt-5 transition">Bitcoin</button>
-                    <button onclick="showTab('ethereum')" class="hover:text-blue-400 pb-5 pt-5 transition">Ethereum</button>
-                    <button onclick="showTab('solana')" class="hover:text-blue-400 pb-5 pt-5 transition">Solana</button>
+                    <button onclick="showTab('global')" class="hover:text-blue-400 transition">Mercado Global</button>
+                    <button onclick="showTab('bitcoin')" class="hover:text-blue-400 transition">Bitcoin</button>
+                    <button onclick="showTab('ethereum')" class="hover:text-blue-400 transition">Ethereum</button>
+                    <button onclick="showTab('solana')" class="hover:text-blue-400 transition">Solana</button>
                 </div>
             </div>
-            <div class="text-[10px] bg-blue-500/10 text-blue-400 px-3 py-1 rounded-full border border-blue-500/20 font-bold">
-                API: mi-crypto-saas-1.onrender.com
+            
+            <div class="flex items-center gap-6">
+                <div class="hidden sm:block text-[10px] bg-blue-500/10 text-blue-400 px-3 py-1 rounded-full border border-blue-500/20 font-bold">
+                    CONNECTED: mi-crypto-saas-1.onrender.com
+                </div>
+                <button onclick="cerrarSesion()" class="text-slate-400 hover:text-red-400 text-sm font-medium transition flex items-center gap-2">
+                    <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                </button>
             </div>
         </div>
     </nav>
 
     <main class="max-w-7xl mx-auto p-6">
         <div id="tab-global" class="tab-content">
-            <div class="mb-10">
-                <h2 class="text-3xl font-bold text-white mb-2">Monitor de Activos</h2>
-                <p class="text-slate-500 text-sm">Precios en tiempo real sincronizados con el mercado global.</p>
+            <div class="mb-10 mt-4">
+                <h2 class="text-3xl font-bold text-white mb-2 tracking-tight">Monitor de Activos Live</h2>
+                <p class="text-slate-500 text-sm">Precios en tiempo real. Haz clic en 'Detalles' para análisis técnico avanzado.</p>
             </div>
             <div id="grid-monedas" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 </div>
         </div>
 
         <div id="tab-detail" class="tab-content hidden">
-            <button onclick="showTab('global')" class="text-blue-500 mb-6 inline-flex items-center gap-2 hover:text-blue-400 font-medium">
+            <button onclick="showTab('global')" class="text-blue-500 mb-6 inline-flex items-center gap-2 hover:text-blue-400 font-medium mt-4">
                 <i class="fas fa-chevron-left"></i> Volver al panel principal
             </button>
             <div class="bg-[#0f172a] rounded-[2rem] p-8 border border-slate-800 shadow-2xl">
                 <div class="flex justify-between items-center mb-8">
-                    <h2 id="detail-title" class="text-4xl font-black text-white uppercase tracking-tight">Análisis Técnico</h2>
-                    <span class="bg-blue-600 text-white text-xs font-bold px-4 py-1 rounded-full uppercase tracking-widest">Live Chart</span>
+                    <h2 id="detail-title" class="text-4xl font-black text-white uppercase tracking-tight">Gráfica de Mercado</h2>
+                    <span class="bg-blue-600/20 text-blue-400 text-[10px] font-bold px-4 py-1 rounded-full uppercase tracking-widest border border-blue-500/30">TradingView Live</span>
                 </div>
-                <div id="tradingview_widget" class="w-full h-[600px] rounded-2xl overflow-hidden shadow-inner border border-slate-700"></div>
+                <div id="tradingview_widget" class="w-full h-[600px] rounded-2xl overflow-hidden border border-slate-700 shadow-inner"></div>
             </div>
         </div>
     </main>
 
     <script src="https://s3.tradingview.com/tv.js"></script>
     <script>
-        const API_URL = "https://mi-crypto-saas-1.onrender.com"; // URL ACTUALIZADA
+        const API_URL = "https://mi-crypto-saas-1.onrender.com";
+
+        function cerrarSesion() {
+            if(confirm("¿Estás seguro de que quieres cerrar la sesión?")) {
+                location.reload(); 
+            }
+        }
 
         function showTab(tab) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
@@ -60,8 +74,8 @@
                 cargarMercado();
             } else {
                 document.getElementById('tab-detail').classList.remove('hidden');
-                document.getElementById('detail-title').innerText = `${tab} / USDT`;
-                cargarGraficaTradingView(tab.toUpperCase());
+                document.getElementById('detail-title').innerText = `${tab} Analysis`;
+                cargarGraficaTradingView(tab);
             }
         }
 
@@ -75,52 +89,51 @@
                 data.forEach(coin => {
                     const shopUrl = `https://www.binance.com/es/trade/${coin.coin.toUpperCase()}_USDT`;
                     grid.innerHTML += `
-                        <div class="bg-[#0f172a] border border-slate-800 p-8 rounded-[2rem] hover:scale-[1.02] hover:border-blue-500/40 transition-all duration-300">
-                            <div class="flex justify-between items-start mb-6">
-                                <span class="text-slate-500 font-bold text-xs uppercase tracking-widest">${coin.coin}</span>
-                                <i class="fas fa-bolt text-blue-500"></i>
+                        <div class="bg-[#0f172a] border border-slate-800 p-8 rounded-[2rem] hover:scale-[1.02] hover:border-blue-500/40 transition-all duration-300 shadow-lg">
+                            <div class="flex justify-between items-start mb-6 text-slate-500 font-bold text-xs uppercase tracking-[0.2em]">
+                                <span>${coin.coin}</span>
+                                <i class="fas fa-chart-line text-blue-500 text-sm"></i>
                             </div>
                             <div class="text-5xl font-black text-white mb-8 tracking-tighter">$${coin.price_usd.toLocaleString()}</div>
                             <div class="flex gap-3">
-                                <button onclick="showTab('${coin.coin}')" class="flex-1 bg-slate-800 hover:bg-slate-700 py-3 rounded-2xl font-bold text-sm transition">Detalles</button>
-                                <a href="${shopUrl}" target="_blank" class="flex-1 bg-blue-600 hover:bg-blue-500 py-3 rounded-2xl font-bold text-sm text-center transition">Comprar</a>
+                                <button onclick="showTab('${coin.coin}')" class="flex-1 bg-slate-800 hover:bg-slate-700 py-4 rounded-2xl font-bold text-xs transition uppercase tracking-widest">Detalles</button>
+                                <a href="${shopUrl}" target="_blank" class="flex-1 bg-blue-600 hover:bg-blue-500 py-4 rounded-2xl font-bold text-xs text-center transition uppercase tracking-widest text-white">Comprar</a>
                             </div>
                         </div>
                     `;
                 });
-            } catch(e) { console.error("Error cargando mercado:", e); }
+            } catch(e) { console.error("Error:", e); }
         }
 
-function cargarGraficaTradingView(symbol) {
-    // Traductor de nombre completo a Ticker de Trading
-    const tickers = {
-        'BITCOIN': 'BTC',
-        'ETHEREUM': 'ETH',
-        'SOLANA': 'SOL',
-        'BINANCECOIN': 'BNB',
-        'CARDANO': 'ADA',
-        'RIPPLE': 'XRP'
-    };
+        function cargarGraficaTradingView(symbol) {
+            // Diccionario que soluciona el error "Este símbolo no existe"
+            const tickers = {
+                'bitcoin': 'BTC',
+                'ethereum': 'ETH',
+                'solana': 'SOL',
+                'binancecoin': 'BNB',
+                'cardano': 'ADA',
+                'ripple': 'XRP'
+            };
 
-    // Obtenemos la abreviatura o usamos el símbolo original si no está en la lista
-    let ticker = tickers[symbol.toUpperCase()] || symbol.toUpperCase();
+            let ticker = tickers[symbol.toLowerCase()] || symbol.toUpperCase();
 
-    new TradingView.widget({
-        "autosize": true,
-        "symbol": `BINANCE:${ticker}USDT`, // Ahora enviará BINANCE:BTCUSDT
-        "interval": "D",
-        "timezone": "Etc/UTC",
-        "theme": "dark",
-        "style": "1",
-        "locale": "es",
-        "container_id": "tradingview_widget",
-        "hide_side_toolbar": false,
-        "allow_symbol_change": true,
-        "details": true,
-        "hotlist": true,
-        "calendar": true
-    });
-}
+            new TradingView.widget({
+                "autosize": true,
+                "symbol": `BINANCE:${ticker}USDT`,
+                "interval": "D",
+                "timezone": "Etc/UTC",
+                "theme": "dark",
+                "style": "1",
+                "locale": "es",
+                "container_id": "tradingview_widget",
+                "hide_side_toolbar": false,
+                "allow_symbol_change": true,
+                "details": true,
+                "hotlist": true,
+                "calendar": true
+            });
+        }
 
         cargarMercado();
         setInterval(cargarMercado, 30000);
