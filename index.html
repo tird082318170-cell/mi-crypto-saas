@@ -2,11 +2,16 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>WhalePro - Crypto Terminal</title>
+    <title>WhalePro - Premium Trading Terminal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .glass { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(10px); }
+    </style>
 </head>
-<body class="bg-[#020617] text-slate-300 font-sans">
+<body class="bg-[#020617] text-slate-300 min-h-screen">
 
     <nav class="bg-[#0f172a] border-b border-slate-800 sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
@@ -18,41 +23,70 @@
                     <button onclick="showTab('global')" class="hover:text-blue-400 transition">Mercado Global</button>
                     <button onclick="showTab('bitcoin')" class="hover:text-blue-400 transition">Bitcoin</button>
                     <button onclick="showTab('ethereum')" class="hover:text-blue-400 transition">Ethereum</button>
-                    <button onclick="showTab('solana')" class="hover:text-blue-400 transition">Solana</button>
                 </div>
             </div>
             
             <div class="flex items-center gap-6">
-                <div class="hidden sm:block text-[10px] bg-blue-500/10 text-blue-400 px-3 py-1 rounded-full border border-blue-500/20 font-bold">
-                    CONNECTED: mi-crypto-saas-1.onrender.com
+                <div id="fear-greed-index" class="hidden sm:flex items-center gap-2 bg-slate-900 px-3 py-1 rounded-full border border-slate-700">
+                    <span class="text-[10px] font-bold text-slate-500">SENTIMIENTO:</span>
+                    <span id="fg-value" class="text-[10px] font-black text-blue-400">CARGANDO...</span>
                 </div>
                 <button onclick="cerrarSesion()" class="text-slate-400 hover:text-red-400 text-sm font-medium transition flex items-center gap-2">
-                    <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                    <i class="fas fa-sign-out-alt"></i> Cerrar
                 </button>
             </div>
         </div>
     </nav>
 
     <main class="max-w-7xl mx-auto p-6">
+        
+        <div id="alert-container" class="mb-6 space-y-2"></div>
+
         <div id="tab-global" class="tab-content">
-            <div class="mb-10 mt-4">
-                <h2 class="text-3xl font-bold text-white mb-2 tracking-tight">Monitor de Activos Live</h2>
-                <p class="text-slate-500 text-sm">Precios en tiempo real. Haz clic en 'Detalles' para análisis técnico avanzado.</p>
-            </div>
-            <div id="grid-monedas" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div class="mb-10 mt-4 flex justify-between items-end">
+                <div>
+                    <h2 class="text-3xl font-bold text-white mb-2 tracking-tight">Monitor de Activos Live</h2>
+                    <p class="text-slate-500 text-sm">Analiza variaciones y utiliza herramientas de trading.</p>
                 </div>
+            </div>
+            <div id="grid-monedas" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
         </div>
 
         <div id="tab-detail" class="tab-content hidden">
             <button onclick="showTab('global')" class="text-blue-500 mb-6 inline-flex items-center gap-2 hover:text-blue-400 font-medium mt-4">
-                <i class="fas fa-chevron-left"></i> Volver al panel principal
+                <i class="fas fa-chevron-left"></i> Volver al panel
             </button>
-            <div class="bg-[#0f172a] rounded-[2rem] p-8 border border-slate-800 shadow-2xl">
-                <div class="flex justify-between items-center mb-8">
-                    <h2 id="detail-title" class="text-4xl font-black text-white uppercase tracking-tight">Gráfica de Mercado</h2>
-                    <span class="bg-blue-600/20 text-blue-400 text-[10px] font-bold px-4 py-1 rounded-full uppercase tracking-widest border border-blue-500/30">TradingView Live</span>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-2 bg-[#0f172a] rounded-[2rem] p-8 border border-slate-800 shadow-2xl">
+                    <div class="flex justify-between items-center mb-8">
+                        <h2 id="detail-title" class="text-4xl font-black text-white uppercase tracking-tight">Gráfica</h2>
+                        <span class="bg-blue-600/20 text-blue-400 text-[10px] font-bold px-4 py-1 rounded-full border border-blue-500/30 tracking-widest">LIVE</span>
+                    </div>
+                    <div id="tradingview_widget" class="w-full h-[500px] rounded-2xl overflow-hidden border border-slate-700"></div>
                 </div>
-                <div id="tradingview_widget" class="w-full h-[600px] rounded-2xl overflow-hidden border border-slate-700 shadow-inner"></div>
+
+                <div class="bg-[#0f172a] rounded-[2rem] p-8 border border-slate-800 shadow-2xl">
+                    <h3 class="text-xl font-bold text-white mb-6"><i class="fas fa-calculator text-blue-500 mr-2"></i> Simulador</h3>
+                    <p class="text-sm text-slate-500 mb-6">Calcula cuánto habrías ganado invirtiendo hoy si el precio sube.</p>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-xs font-bold text-slate-400 block mb-2 uppercase">Inversión (USD)</label>
+                            <input type="number" id="calc-amount" value="100" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-blue-500 transition">
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-slate-400 block mb-2 uppercase">Precio Objetivo (USD)</label>
+                            <input type="number" id="calc-target" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-white outline-none focus:border-blue-500 transition">
+                        </div>
+                        <button onclick="calcularGanancia()" class="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-xl font-black text-sm text-white transition mt-4 uppercase">Calcular Retorno</button>
+                        
+                        <div id="calc-result" class="hidden mt-6 p-4 rounded-xl bg-blue-500/10 border border-blue-500/20 text-center">
+                            <p class="text-xs text-blue-400 uppercase font-bold mb-1">Ganancia Estimada</p>
+                            <p id="result-value" class="text-2xl font-black text-white">$0.00</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </main>
@@ -60,13 +94,13 @@
     <script src="https://s3.tradingview.com/tv.js"></script>
     <script>
         const API_URL = "https://mi-crypto-saas-1.onrender.com";
+        let lastPrices = {};
+        let currentCoinPrice = 0;
 
-        function cerrarSesion() {
-            if(confirm("¿Estás seguro de que quieres cerrar la sesión?")) {
-                location.reload(); 
-            }
-        }
+        // 1. CERRAR SESIÓN
+        function cerrarSesion() { if(confirm("¿Cerrar terminal?")) location.reload(); }
 
+        // 2. CAMBIAR PESTAÑAS
         function showTab(tab) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
             if(tab === 'global') {
@@ -74,11 +108,13 @@
                 cargarMercado();
             } else {
                 document.getElementById('tab-detail').classList.remove('hidden');
-                document.getElementById('detail-title').innerText = `${tab} Analysis`;
+                document.getElementById('detail-title').innerText = `${tab} / USDT`;
+                document.getElementById('calc-result').classList.add('hidden');
                 cargarGraficaTradingView(tab);
             }
         }
 
+        // 3. CARGAR MERCADO Y ALERTAS
         async function cargarMercado() {
             try {
                 const res = await fetch(`${API_URL}/api/v1/mercado/resumen`);
@@ -87,55 +123,78 @@
                 grid.innerHTML = "";
 
                 data.forEach(coin => {
+                    // Lógica de Alertas (Volatilidad)
+                    if (lastPrices[coin.coin] && Math.abs(coin.price_usd - lastPrices[coin.coin]) / lastPrices[coin.coin] > 0.005) {
+                        lanzarAlerta(coin.coin, coin.price_usd);
+                    }
+                    lastPrices[coin.coin] = coin.price_usd;
+
                     const shopUrl = `https://www.binance.com/es/trade/${coin.coin.toUpperCase()}_USDT`;
                     grid.innerHTML += `
-                        <div class="bg-[#0f172a] border border-slate-800 p-8 rounded-[2rem] hover:scale-[1.02] hover:border-blue-500/40 transition-all duration-300 shadow-lg">
-                            <div class="flex justify-between items-start mb-6 text-slate-500 font-bold text-xs uppercase tracking-[0.2em]">
-                                <span>${coin.coin}</span>
-                                <i class="fas fa-chart-line text-blue-500 text-sm"></i>
+                        <div class="bg-[#0f172a] border border-slate-800 p-8 rounded-[2rem] hover:border-blue-500/40 transition-all shadow-lg">
+                            <div class="flex justify-between items-center mb-6">
+                                <span class="text-slate-500 font-bold text-xs uppercase tracking-widest">${coin.coin}</span>
+                                <i class="fas fa-signal text-blue-500"></i>
                             </div>
-                            <div class="text-5xl font-black text-white mb-8 tracking-tighter">$${coin.price_usd.toLocaleString()}</div>
+                            <div class="text-4xl font-black text-white mb-8 tracking-tighter">$${coin.price_usd.toLocaleString()}</div>
                             <div class="flex gap-3">
-                                <button onclick="showTab('${coin.coin}')" class="flex-1 bg-slate-800 hover:bg-slate-700 py-4 rounded-2xl font-bold text-xs transition uppercase tracking-widest">Detalles</button>
-                                <a href="${shopUrl}" target="_blank" class="flex-1 bg-blue-600 hover:bg-blue-500 py-4 rounded-2xl font-bold text-xs text-center transition uppercase tracking-widest text-white">Comprar</a>
+                                <button onclick="setCalcPrice(${coin.price_usd}); showTab('${coin.coin}')" class="flex-1 bg-slate-800 hover:bg-slate-700 py-3 rounded-2xl font-bold text-xs uppercase tracking-widest transition">Detalles</button>
+                                <a href="${shopUrl}" target="_blank" class="flex-1 bg-blue-600 hover:bg-blue-500 py-3 rounded-2xl font-bold text-xs text-center transition uppercase tracking-widest text-white">Comprar</a>
                             </div>
                         </div>
                     `;
                 });
-            } catch(e) { console.error("Error:", e); }
+            } catch(e) { console.error(e); }
         }
 
+        // 4. CALCULADORA
+        function setCalcPrice(p) { 
+            currentCoinPrice = p; 
+            document.getElementById('calc-target').value = Math.round(p * 1.1);
+        }
+        function calcularGanancia() {
+            const amount = document.getElementById('calc-amount').value;
+            const target = document.getElementById('calc-target').value;
+            const result = (amount / currentCoinPrice) * target;
+            const profit = result - amount;
+            
+            document.getElementById('calc-result').classList.remove('hidden');
+            document.getElementById('result-value').innerText = `+$${profit.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+        }
+
+        // 5. TRADINGVIEW FIX
         function cargarGraficaTradingView(symbol) {
-            // Diccionario que soluciona el error "Este símbolo no existe"
-            const tickers = {
-                'bitcoin': 'BTC',
-                'ethereum': 'ETH',
-                'solana': 'SOL',
-                'binancecoin': 'BNB',
-                'cardano': 'ADA',
-                'ripple': 'XRP'
-            };
-
+            const tickers = { 'bitcoin': 'BTC', 'ethereum': 'ETH', 'solana': 'SOL', 'binancecoin': 'BNB', 'cardano': 'ADA', 'ripple': 'XRP' };
             let ticker = tickers[symbol.toLowerCase()] || symbol.toUpperCase();
-
             new TradingView.widget({
-                "autosize": true,
-                "symbol": `BINANCE:${ticker}USDT`,
-                "interval": "D",
-                "timezone": "Etc/UTC",
-                "theme": "dark",
-                "style": "1",
-                "locale": "es",
-                "container_id": "tradingview_widget",
-                "hide_side_toolbar": false,
-                "allow_symbol_change": true,
-                "details": true,
-                "hotlist": true,
-                "calendar": true
+                "autosize": true, "symbol": `BINANCE:${ticker}USDT`, "interval": "D", "theme": "dark", "style": "1", "locale": "es", "container_id": "tradingview_widget"
             });
         }
 
+        // 6. FEAR & GREED INDEX
+        async function cargarSentimiento() {
+            try {
+                const res = await fetch('https://api.alternative.me/fng/');
+                const data = await res.json();
+                const val = data.data[0].value;
+                const text = data.data[0].value_classification;
+                document.getElementById('fg-value').innerText = `${val} - ${text.toUpperCase()}`;
+                document.getElementById('fg-value').className = val > 50 ? 'text-green-400 font-black text-[10px]' : 'text-red-400 font-black text-[10px]';
+            } catch(e) {}
+        }
+
+        // 7. ALERTAS
+        function lanzarAlerta(coin, price) {
+            const container = document.getElementById('alert-container');
+            const alert = document.createElement('div');
+            alert.className = "bg-blue-600 text-white px-6 py-3 rounded-xl flex justify-between items-center shadow-lg animate-bounce";
+            alert.innerHTML = `<span><i class="fas fa-exclamation-triangle mr-2"></i> Movimiento detectado en <b>${coin.toUpperCase()}</b>: $${price}</span>`;
+            container.appendChild(alert);
+            setTimeout(() => alert.remove(), 5000);
+        }
+
         cargarMercado();
+        cargarSentimiento();
         setInterval(cargarMercado, 30000);
     </script>
 </body>
