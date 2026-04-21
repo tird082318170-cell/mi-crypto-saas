@@ -1,88 +1,81 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8"><title>Crypto Whale Dashboard</title>
+    <meta charset="UTF-8">
+    <title>Crypto Whale Terminal</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-</head>
-<body class="bg-[#0b1120] text-slate-200 font-sans min-h-screen">
-
-    <div id="login" class="flex items-center justify-center min-h-screen">
-        <div class="bg-slate-800/50 p-8 rounded-2xl backdrop-blur-md border border-slate-700 w-96 shadow-2xl">
-            <div class="text-blue-500 text-4xl mb-4 flex justify-center"><i class="fas fa-chart-line"></i></div>
-            <h2 class="text-2xl font-bold text-center mb-6 text-white">Whale Analytics</h2>
-            <input id="user" type="text" placeholder="Admin User" class="w-full mb-3 p-3 rounded-xl bg-slate-900 border border-slate-700 focus:border-blue-500 outline-none">
-            <input id="pass" type="password" placeholder="Password" class="w-full mb-6 p-3 rounded-xl bg-slate-900 border border-slate-700 focus:border-blue-500 outline-none">
-            <button onclick="entrar()" class="bg-blue-600 hover:bg-blue-500 w-full py-3 rounded-xl font-bold transition-all transform hover:scale-105">Iniciar Terminal</button>
-        </div>
-    </div>
-
-    <div id="dash" class="hidden p-6 max-w-6xl mx-auto">
-        <header class="flex justify-between items-center mb-10 border-b border-slate-800 pb-5">
-            <div>
-                <h1 class="text-3xl font-black text-white tracking-tight">MARKET <span class="text-blue-500">INSIGHTS</span></h1>
-                <p class="text-slate-500 text-sm">Monitoreo en tiempo real con señales de trading</p>
-            </div>
-            <button onclick="location.reload()" class="bg-slate-800 p-3 rounded-full hover:bg-slate-700 transition"><i class="fas fa-power-off text-red-400"></i></button>
-        </header>
-
-        <div id="market-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> </head>
+<body class="bg-[#0b1120] text-white p-8">
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-4xl font-black mb-8 text-blue-500 tracking-tighter">MARKET <span class="text-white">INSIGHTS PRO</span></h1>
+        
+        <div id="contenedor-monedas" class="grid grid-cols-1 md:grid-cols-2 gap-6">
             </div>
     </div>
 
     <script>
-        const API_URL = "https://mi-crypto-saas-1.onrender.com"; // CAMBIAR POR LA TUYA
-        let token = "";
+        const API_URL = "https://mi-crypto-saas-1.onrender.com"; // Reemplaza con tu URL
+        let charts = {}; // Guardar instancias de gráficas
 
-        async function entrar() {
-            const res = await fetch(`${API_URL}/api/v1/login`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({usuario: document.getElementById('user').value, password: document.getElementById('pass').value})
-            });
-            if(res.ok) {
-                document.getElementById('login').classList.add('hidden');
-                document.getElementById('dash').classList.remove('hidden');
-                actualizar(); setInterval(actualizar, 30000);
-            } else alert("Acceso denegado");
-        }
-
-        async function actualizar() {
-            const res = await fetch(`${API_URL}/api/v1/mercado`);
+        async function actualizarDashboard() {
+            const res = await fetch(`${API_URL}/api/v1/mercado/completo`);
             const data = await res.json();
-            const grid = document.getElementById('market-grid');
-            grid.innerHTML = "";
+            const contenedor = document.getElementById('contenedor-monedas');
 
-            data.forEach(coin => {
-                const signal = coin.price_usd < coin.media_movil ? 
-                    {text: 'COMPRA', color: 'text-green-400', bg: 'bg-green-400/10', icon: 'fa-arrow-trend-up'} : 
-                    {text: 'VENTA', color: 'text-red-400', bg: 'bg-red-400/10', icon: 'fa-arrow-trend-down'};
+            for (const [coin, info] of Object.entries(data)) {
+                let cardId = `card-${coin}`;
+                let canvasId = `chart-${coin}`;
 
-                grid.innerHTML += `
-                    <div class="bg-slate-800/40 border border-slate-700 p-6 rounded-2xl hover:border-blue-500/50 transition-all">
-                        <div class="flex justify-between items-start mb-4">
-                            <span class="uppercase font-black text-slate-400 tracking-widest">${coin.coin}</span>
-                            <span class="${signal.bg} ${signal.color} text-[10px] px-3 py-1 rounded-full font-bold">
-                                <i class="fas ${signal.icon} mr-1"></i> SUGERENCIA: ${signal.text}
-                            </span>
+                // Si la tarjeta no existe, la creamos
+                if (!document.getElementById(cardId)) {
+                    contenedor.innerHTML += `
+                        <div id="${cardId}" class="bg-slate-800/50 border border-slate-700 p-6 rounded-3xl shadow-2xl">
+                            <h2 class="uppercase font-bold text-slate-400 mb-2">${coin}</h2>
+                            <div class="text-3xl font-mono font-bold mb-4">$${info.actual.toLocaleString()}</div>
+                            <canvas id="${canvasId}" class="w-full h-32"></canvas>
                         </div>
-                        <div class="text-4xl font-mono font-bold text-white mb-4">$${coin.price_usd.toLocaleString()}</div>
-                        <div class="grid grid-cols-2 gap-4 text-xs">
-                            <div class="bg-slate-900/50 p-3 rounded-lg">
-                                <p class="text-slate-500 mb-1">Media (10m)</p>
-                                <p class="text-blue-300 font-bold">$${coin.media_movil.toFixed(2)}</p>
-                            </div>
-                            <div class="bg-slate-900/50 p-3 rounded-lg">
-                                <p class="text-slate-500 mb-1">24h Var</p>
-                                <p class="${coin.var_porcentual >= 0 ? 'text-green-400' : 'text-red-400'} font-bold">
-                                    ${coin.var_porcentual.toFixed(2)}%
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                `;
+                    `;
+                } else {
+                    // Si ya existe, actualizamos solo el texto del precio
+                    document.querySelector(`#${cardId} .text-3xl`).innerText = `$${info.actual.toLocaleString()}`;
+                }
+
+                // Dibujar o actualizar la gráfica
+                dibujarGrafica(canvasId, info.historial);
+            }
+        }
+
+        function dibujarGrafica(id, datos) {
+            const ctx = document.getElementById(id).getContext('2d');
+            
+            // Si la gráfica ya existe, la destruimos para crear la nueva con datos frescos
+            if (charts[id]) charts[id].destroy();
+
+            charts[id] = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: datos.map((_, i) => i),
+                    datasets: [{
+                        data: datos,
+                        borderColor: '#3b82f6',
+                        borderWidth: 3,
+                        pointRadius: 0,
+                        fill: true,
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: { x: { display: false }, y: { display: false } }
+                }
             });
         }
+
+        actualizarDashboard();
+        setInterval(actualizarDashboard, 60000);
     </script>
 </body>
 </html>
