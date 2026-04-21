@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8"><title>Crypto Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white flex items-center justify-center min-h-screen">
+    <div id="login" class="bg-gray-800 p-8 rounded-lg shadow-xl w-80 text-center">
+        <h2 class="text-xl font-bold mb-4">Ingreso SaaS</h2>
+        <input id="user" type="text" placeholder="Usuario" class="w-full mb-2 p-2 rounded bg-gray-700">
+        <input id="pass" type="password" placeholder="Contraseña" class="w-full mb-4 p-2 rounded bg-gray-700">
+        <button onclick="entrar()" class="bg-blue-600 w-full py-2 rounded font-bold">Entrar</button>
+    </div>
+    <div id="dash" class="hidden text-center">
+        <h1 class="text-3xl font-bold mb-4 text-blue-400">Bitcoin Live</h1>
+        <div class="bg-gray-800 p-10 rounded-2xl border-2 border-blue-500">
+            <p class="text-gray-400">Precio Actual</p>
+            <div id="precio" class="text-6xl font-black text-white">$ --</div>
+        </div>
+    </div>
+    <script>
+        const API_URL = "https://TU-APP-EN-RENDER.onrender.com"; // CAMBIAR ESTO DESPUÉS
+
+        async function entrar() {
+            const res = await fetch(`${API_URL}/api/v1/login`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({usuario: document.getElementById('user').value, password: document.getElementById('pass').value})
+            });
+            if(res.ok) {
+                document.getElementById('login').classList.add('hidden');
+                document.getElementById('dash').classList.remove('hidden');
+                cargar(); setInterval(cargar, 30000);
+            } else alert("Error");
+        }
+        async function cargar() {
+            const res = await fetch(`${API_URL}/api/v1/precios/bitcoin`);
+            const data = await res.json();
+            document.getElementById('precio').innerText = `$${data.price_usd.toLocaleString()}`;
+        }
+    </script>
+</body>
+</html>
