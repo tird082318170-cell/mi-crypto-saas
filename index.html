@@ -1,81 +1,112 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Crypto Whale Terminal</title>
+    <title>WhalePro - Crypto Terminal</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> </head>
-<body class="bg-[#0b1120] text-white p-8">
-    <div class="max-w-6xl mx-auto">
-        <h1 class="text-4xl font-black mb-8 text-blue-500 tracking-tighter">MARKET <span class="text-white">INSIGHTS PRO</span></h1>
-        
-        <div id="contenedor-monedas" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-[#020617] text-slate-300 font-sans">
+
+    <nav class="bg-[#0f172a] border-b border-slate-800 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-8">
+                <span class="text-blue-500 font-black text-xl tracking-tighter italic">WHALE<span class="text-white font-normal">PRO</span></span>
+                <div class="hidden md:flex gap-6 text-sm font-medium">
+                    <button onclick="showTab('global')" class="text-white border-b-2 border-blue-500 pb-5 pt-5 transition">Mercado Global</button>
+                    <button onclick="showTab('bitcoin')" class="hover:text-blue-400 pb-5 pt-5 transition">Bitcoin</button>
+                    <button onclick="showTab('ethereum')" class="hover:text-blue-400 pb-5 pt-5 transition">Ethereum</button>
+                    <button onclick="showTab('solana')" class="hover:text-blue-400 pb-5 pt-5 transition">Solana</button>
+                </div>
             </div>
-    </div>
+            <div class="text-[10px] bg-blue-500/10 text-blue-400 px-3 py-1 rounded-full border border-blue-500/20 font-bold">
+                API: mi-crypto-saas-1.onrender.com
+            </div>
+        </div>
+    </nav>
 
+    <main class="max-w-7xl mx-auto p-6">
+        <div id="tab-global" class="tab-content">
+            <div class="mb-10">
+                <h2 class="text-3xl font-bold text-white mb-2">Monitor de Activos</h2>
+                <p class="text-slate-500 text-sm">Precios en tiempo real sincronizados con el mercado global.</p>
+            </div>
+            <div id="grid-monedas" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                </div>
+        </div>
+
+        <div id="tab-detail" class="tab-content hidden">
+            <button onclick="showTab('global')" class="text-blue-500 mb-6 inline-flex items-center gap-2 hover:text-blue-400 font-medium">
+                <i class="fas fa-chevron-left"></i> Volver al panel principal
+            </button>
+            <div class="bg-[#0f172a] rounded-[2rem] p-8 border border-slate-800 shadow-2xl">
+                <div class="flex justify-between items-center mb-8">
+                    <h2 id="detail-title" class="text-4xl font-black text-white uppercase tracking-tight">Análisis Técnico</h2>
+                    <span class="bg-blue-600 text-white text-xs font-bold px-4 py-1 rounded-full uppercase tracking-widest">Live Chart</span>
+                </div>
+                <div id="tradingview_widget" class="w-full h-[600px] rounded-2xl overflow-hidden shadow-inner border border-slate-700"></div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://s3.tradingview.com/tv.js"></script>
     <script>
-        const API_URL = "https://mi-crypto-saas-1.onrender.com"; // Reemplaza con tu URL
-        let charts = {}; // Guardar instancias de gráficas
+        const API_URL = "https://mi-crypto-saas-1.onrender.com"; // URL ACTUALIZADA
 
-        async function actualizarDashboard() {
-            const res = await fetch(`${API_URL}/api/v1/mercado/completo`);
-            const data = await res.json();
-            const contenedor = document.getElementById('contenedor-monedas');
-
-            for (const [coin, info] of Object.entries(data)) {
-                let cardId = `card-${coin}`;
-                let canvasId = `chart-${coin}`;
-
-                // Si la tarjeta no existe, la creamos
-                if (!document.getElementById(cardId)) {
-                    contenedor.innerHTML += `
-                        <div id="${cardId}" class="bg-slate-800/50 border border-slate-700 p-6 rounded-3xl shadow-2xl">
-                            <h2 class="uppercase font-bold text-slate-400 mb-2">${coin}</h2>
-                            <div class="text-3xl font-mono font-bold mb-4">$${info.actual.toLocaleString()}</div>
-                            <canvas id="${canvasId}" class="w-full h-32"></canvas>
-                        </div>
-                    `;
-                } else {
-                    // Si ya existe, actualizamos solo el texto del precio
-                    document.querySelector(`#${cardId} .text-3xl`).innerText = `$${info.actual.toLocaleString()}`;
-                }
-
-                // Dibujar o actualizar la gráfica
-                dibujarGrafica(canvasId, info.historial);
+        function showTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+            if(tab === 'global') {
+                document.getElementById('tab-global').classList.remove('hidden');
+                cargarMercado();
+            } else {
+                document.getElementById('tab-detail').classList.remove('hidden');
+                document.getElementById('detail-title').innerText = `${tab} / USDT`;
+                cargarGraficaTradingView(tab.toUpperCase());
             }
         }
 
-        function dibujarGrafica(id, datos) {
-            const ctx = document.getElementById(id).getContext('2d');
-            
-            // Si la gráfica ya existe, la destruimos para crear la nueva con datos frescos
-            if (charts[id]) charts[id].destroy();
+        async function cargarMercado() {
+            try {
+                const res = await fetch(`${API_URL}/api/v1/mercado/resumen`);
+                const data = await res.json();
+                const grid = document.getElementById('grid-monedas');
+                grid.innerHTML = "";
 
-            charts[id] = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: datos.map((_, i) => i),
-                    datasets: [{
-                        data: datos,
-                        borderColor: '#3b82f6',
-                        borderWidth: 3,
-                        pointRadius: 0,
-                        fill: true,
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: { legend: { display: false } },
-                    scales: { x: { display: false }, y: { display: false } }
-                }
+                data.forEach(coin => {
+                    const shopUrl = `https://www.binance.com/es/trade/${coin.coin.toUpperCase()}_USDT`;
+                    grid.innerHTML += `
+                        <div class="bg-[#0f172a] border border-slate-800 p-8 rounded-[2rem] hover:scale-[1.02] hover:border-blue-500/40 transition-all duration-300">
+                            <div class="flex justify-between items-start mb-6">
+                                <span class="text-slate-500 font-bold text-xs uppercase tracking-widest">${coin.coin}</span>
+                                <i class="fas fa-bolt text-blue-500"></i>
+                            </div>
+                            <div class="text-5xl font-black text-white mb-8 tracking-tighter">$${coin.price_usd.toLocaleString()}</div>
+                            <div class="flex gap-3">
+                                <button onclick="showTab('${coin.coin}')" class="flex-1 bg-slate-800 hover:bg-slate-700 py-3 rounded-2xl font-bold text-sm transition">Detalles</button>
+                                <a href="${shopUrl}" target="_blank" class="flex-1 bg-blue-600 hover:bg-blue-500 py-3 rounded-2xl font-bold text-sm text-center transition">Comprar</a>
+                            </div>
+                        </div>
+                    `;
+                });
+            } catch(e) { console.error("Error cargando mercado:", e); }
+        }
+
+        function cargarGraficaTradingView(symbol) {
+            let ticker = symbol === 'BINANCECOIN' ? 'BNB' : symbol;
+            new TradingView.widget({
+                "autosize": true,
+                "symbol": `BINANCE:${ticker}USDT`,
+                "interval": "D",
+                "timezone": "Etc/UTC",
+                "theme": "dark",
+                "style": "1",
+                "locale": "es",
+                "container_id": "tradingview_widget"
             });
         }
 
-        actualizarDashboard();
-        setInterval(actualizarDashboard, 60000);
+        cargarMercado();
+        setInterval(cargarMercado, 30000);
     </script>
 </body>
 </html>
