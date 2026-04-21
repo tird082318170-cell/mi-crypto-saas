@@ -11,7 +11,6 @@ from datetime import datetime
 
 app = FastAPI()
 
-# Permitir que el HTML se conecte a la API
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -26,31 +25,39 @@ class LoginRequest(BaseModel):
     password: str
 
 def motor_de_datos():
-    """Hilo que crea la tabla y descarga datos cada 60 segundos"""
+    """Descarga múltiples monedas y calcula señales básicas"""
+    monedas = "bitcoin,ethereum,solana,cardano"
     while True:
         try:
             if DATABASE_URL:
                 conn = psycopg2.connect(DATABASE_URL)
                 cur = conn.cursor()
-                # Crear tabla con estructura completa
                 cur.execute('''CREATE TABLE IF NOT EXISTS crypto_history 
                     (id SERIAL PRIMARY KEY, coin VARCHAR(50), price_usd FLOAT, 
                     media_movil FLOAT, var_porcentual FLOAT, timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
                 
-                # Descargar precio real de Bitcoin
-                res = requests.get("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd", timeout=10)
-                precio = res.json()['bitcoin']['usd']
+                res = requests.get(f"https://api.coingecko.com/api/v3/simple/price?ids={monedas}&vs_currencies=usd&include_24hr_change=true", timeout=10)
+                data = res.json()
                 
-                # Insertar datos (Media móvil simplificada al precio actual para el ejemplo)
-                cur.execute("INSERT INTO crypto_history (coin, price_usd, media_movil, var_porcentual) VALUES (%s, %s, %s, %s)",
-                           ('bitcoin', precio, precio, 0.0))
+                for coin in data:
+                    precio = data[coin]['usd']
+                    cambio_24h = data[coin]['usd_24h_change']
+                    
+                    # Obtenemos media simple de los últimos registros
+                    cur.execute("SELECT price_usd FROM crypto_history WHERE coin=%s ORDER BY timestamp DESC LIMIT 10", (coin,))
+                    rows = cur.fetchall()
+                    precios_anteriores = [r[0] for r in rows] if rows else [precio]
+                    media = sum(precios_anteriores) / len(precios_anteriores)
+
+                    cur.execute("INSERT INTO crypto_history (coin, price_usd, media_movil, var_porcentual) VALUES (%s, %s, %s, %s)",
+                               (coin, precio, media, cambio_24h))
                 
                 conn.commit()
                 cur.close()
                 conn.close()
-                print(f"✔️ Datos actualizados: ${precio}")
+                print(f"✔️ Multimercado actualizado: {list(data.keys())}")
         except Exception as e:
-            print(f"❌ Error en motor de datos: {e}")
+            print(f"❌ Error: {e}")
         time.sleep(60)
 
 @app.on_event("startup")
@@ -60,15 +67,21 @@ def startup():
 @app.post("/api/v1/login")
 def login(datos: LoginRequest):
     if datos.usuario == "admin" and datos.password == "crypto2026":
-        return {"access_token": "token-secreto-123", "token_type": "bearer"}
-    raise HTTPException(status_code=401, detail="Credenciales incorrectas")
+        return {"access_token": "token-pro-456", "token_type": "bearer"}
+    raise HTTPException(status_code=401, detail="Error")
 
-@app.get("/api/v1/precios/bitcoin")
-def obtener_precios():
+@app.get("/api/v1/mercado")
+def obtener_mercado():
     try:
         conn = psycopg2.connect(DATABASE_URL)
-        df = pd.read_sql("SELECT price_usd, media_movil, var_porcentual FROM crypto_history ORDER BY timestamp DESC LIMIT 1", conn)
+        # Obtenemos el último precio de cada moneda
+        query = """
+            SELECT DISTINCT ON (coin) coin, price_usd, media_movil, var_porcentual 
+            FROM crypto_history 
+            ORDER BY coin, timestamp DESC
+        """
+        df = pd.read_sql(query, conn)
         conn.close()
-        return df.iloc[0].to_dict() if not df.empty else {"price_usd": 0, "media_movil": 0, "var_porcentual": 0}
+        return df.to_dict(orient="records")
     except Exception as e:
         return {"error": str(e)}
